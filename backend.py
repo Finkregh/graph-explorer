@@ -30,8 +30,14 @@ class Backend(object):
         self.config = config
 
     def download_metrics_json(self):
-        import urllib2
-        response = urllib2.urlopen("%s/metrics/index.json" % self.config.graphite_url)
+        import urllib2, base64
+        if self.config.graphite_httpuser:
+            request = urllib2.Request("%s/metrics/index.json" % self.config.graphite_url)
+            base64string = base64.encodestring('%s:%s' % (self.config.graphite_httpuser, self.config.graphite_httppw)).replace('\n', '')
+            request.add_header("Authorization", "Basic %s" % base64string)
+            response = urllib2.urlopen(request)
+        else:
+            response = urllib2.urlopen("%s/metrics/index.json" % self.config.graphite_url)
         m = open('%s.tmp' % self.config.filename_metrics, 'w')
         m.write(response.read())
         m.close()
